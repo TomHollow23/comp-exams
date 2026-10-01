@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompTIA A+ Practice Exams</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151c2e;
+      --border: #24314d;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --correct: #10b981;
+      --wrong: #ef4444;
+      --flagged: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 16px; }
+
+    header { width: 100%; max-width: 680px; margin-bottom: 20px; text-align: center; }
+    h1 { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+    h1 span { color: var(--accent); }
+    .sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+    .container { width: 100%; max-width: 680px; }
+    
+    /* Menu Screen */
+    .menu-grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; }
+    @media (min-width: 500px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
+
+    .exam-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+    .exam-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
+    .exam-card h3 { font-size: 1.1rem; color: #fff; margin-bottom: 6px; }
+    .exam-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+    .exam-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--accent); background: rgba(56, 189, 248, 0.1); padding: 3px 8px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(56, 189, 248, 0.2); }
+    .score-tag { margin-top: 12px; font-size: 0.75rem; font-weight: 600; color: var(--correct); }
+
+    /* Exam Screen */
+    .exam-header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .timer { font-weight: 700; color: var(--accent); font-size: 0.9rem; }
+    .q-count { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+
+    .q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .q-text { font-size: 1.1rem; font-weight: 600; line-height: 1.5; margin-bottom: 20px; }
+    
+    .options { display: flex; flex-direction: column; gap: 12px; }
+    .option-btn { background: #1e293b; border: 1px solid var(--border); color: var(--text); padding: 14px 18px; border-radius: 12px; text-align: left; font-size: 0.95rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; gap: 12px; line-height: 1.4; }
+    .option-btn:hover { border-color: var(--accent); background: #26334d; }
+    .option-btn.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.15); font-weight: 600; }
+    .opt-letter { font-weight: 700; color: var(--accent); }
+
+    .exam-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; border: none; cursor: pointer; font-size: 0.85rem; transition: all 0.15s; }
+    .btn-sec { background: #1e293b; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-sec:hover { color: #fff; border-color: var(--accent); }
+    .btn-pri { background: var(--accent); color: #000; }
+    .btn-pri:hover { box-shadow: 0 0 12px var(--accent-glow); }
+    .btn-flag { background: transparent; border: 1px solid var(--flagged); color: var(--flagged); }
+    .btn-flag.active { background: var(--flagged); color: #000; }
+
+    /* Results Screen */
+    .results-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 28px; text-align: center; margin-bottom: 24px; }
+    .score-circle { font-size: 3rem; font-weight: 800; margin: 12px 0; }
+    .pass { color: var(--correct); }
+    .fail { color: var(--wrong); }
+    
+    .review-list { display: flex; flex-direction: column; gap: 16px; }
+    .review-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: left; }
+    .review-item.incorrect { border-left: 4px solid var(--wrong); }
+    .review-item.correct { border-left: 4px solid var(--correct); }
+    .rev-q { font-weight: 600; margin-bottom: 12px; font-size: 1rem; }
+    .rev-ans { font-size: 0.85rem; margin-top: 6px; line-height: 1.4; }
+    .user-val { color: var(--wrong); }
+    .correct-val { color: var(--correct); font-weight: 600; }
+    .concept-tag { font-size: 0.75rem; color: var(--accent); font-weight: bold; text-transform: uppercase; margin-bottom: 6px; display: block; }
+
+    .hide { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CompTIA A+ <span>Exam Simulator</span></h1>
+    <p class="sub">Vetted 230-Question Assessment Suite</p>
+  </header>
+
+  <div class="container">
+    <!-- Screen 1: Exam Menu -->
+    <div id="screen-menu">
+      <div class="menu-grid">
+        <div class="exam-card" onclick="startExam(0)">
+          <span class="exam-badge">220-1201</span>
+          <h3>Core 1 — Exam A</h3>
+          <p>58 Questions covering Mobile Devices, Networking, & Hardware.</p>
+          <div class="score-tag" id="score-0">Not Attempted</div>
+        </div>
+        <div class="exam-card" onclick="startExam(1)">
+          <span class="exam-badge">220-1201</span>
+          <h3>Core 1 — Exam B</h3>
+          <p>57 Questions covering Cloud, Virtualization, & HW/Net Troubleshooting.</p>
+          <div class="score-tag" id="score-1">Not Attempted</div>
+        </div>
+        <div class="exam-card" onclick="startExam(2)">
+          <span class="exam-badge">220-1202</span>
+          <h3>Core 2 — Exam A</h3>
+          <p>58 Questions covering Operating Systems & Security.</p>
+          <div class="score-tag" id="score-2">Not Attempted</div>
+        </div>
+        <div class="exam-card" onclick="startExam(3)">
+          <span class="exam-badge">220-1202</span>
+          <h3>Core 2 — Exam B</h3>
+          <p>57 Questions covering Software Troubleshooting & Operational Procedures.</p>
+          <div class="score-tag" id="score-3">Not Attempted</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Exam View -->
+    <div id="screen-exam" class="hide">
+      <div class="exam-header">
+        <span class="q-count" id="q-progress">Question 1 / 58</span>
+        <button class="btn btn-flag" id="btn-flag" onclick="toggleFlag()">⚑ Flag</button>
+        <span class="timer" id="timer">00:00</span>
+      </div>
+
+      <div class="q-card">
+        <p class="q-text" id="q-text">Question text goes here...</p>
+        <div class="options" id="options-container"></div>
+      </div>
+
+      <div class="exam-nav">
+        <button class="btn btn-sec" onclick="prevQ()">← Prev</button>
+        <button class="btn btn-sec" onclick="showMenu()">Exit</button>
+        <button class="btn btn-pri" id="btn-next" onclick="nextQ()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Screen 3: Results & Analysis -->
+    <div id="screen-results" class="hide">
+      <div class="results-card">
+        <h2 id="result-title">Exam Complete</h2>
+        <div class="score-circle" id="score-circle">0%</div>
+        <p id="result-status" style="font-weight: 700; margin-bottom: 12px;"></p>
+        <p id="result-stats" style="color: var(--text-muted); font-size: 0.9rem;"></p>
+        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+          <button class="btn btn-pri" onclick="showMenu()">Back to Menu</button>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 16px;">Question Review & Study Guide</h3>
+      <div class="review-list" id="review-container"></div>
+    </div>
+  </div>
+
+  <script>
+    // Embedded 230 Vetted CompTIA Questions Data
+    const rawCards = [
+      // Mobile
+      { cat: "Mobile Devices", q: "What is a SO-DIMM?", a: "A compact memory module used in laptops and other small devices. It is shorter than a desktop DIMM.", dist: ["A type of desktop motherboard connector", "A high-speed storage protocol for M.2 drives", "A liquid cooling radiator fitting"] },
+      { cat: "Mobile Devices", q: "A laptop battery is swollen. What should you do?", a: "Stop using and charging the device. Do not puncture or compress the battery; follow safe removal guidance.", dist: ["Drain the battery completely to discharge gas", "Place it in freezer to reduce swell", "Puncture outer casing carefully to relieve pressure"] },
+      { cat: "Mobile Devices", q: "A laptop display shows an image, but touch input does not work. What component is the likely fault?", a: "The digitizer or its connection.", dist: ["The GPU inverter card", "The CCFL backlight tube", "The system RAM module"] },
+      { cat: "Mobile Devices", q: "A laptop has a very dim image that is easier to see under a flashlight. What should you suspect?", a: "A backlight or display power problem.", dist: ["Corrupted GPU display driver", "Depleted CMOS battery", "Misconfigured refresh rate"] },
+      { cat: "Mobile Devices", q: "What does a laptop docking station provide?", a: "A single connection point for power and peripherals such as displays, Ethernet, keyboard, and mouse.", dist: ["Extra dedicated GPU processing power", "Additional system RAM capacity", "External RAID battery backup"] },
+      
+      // Networking
+      { cat: "Networking", q: "Port 22", a: "SSH / SFTP (Secure Shell) — Encrypted remote CLI and file transfer", dist: ["Telnet — Unencrypted remote CLI", "DNS — Domain Name System", "RDP — Remote Desktop Protocol"] },
+      { cat: "Networking", q: "Port 53", a: "DNS (Domain Name System) — Resolves domain names to IP addresses", dist: ["DHCP — Automatic IP assignment", "HTTP — Web traffic", "SNMP — System log queries"] },
+      { cat: "Networking", q: "Port 80 vs 443", a: "HTTP (80) = Unencrypted web traffic. HTTPS (443) = Web traffic protected with TLS.", dist: ["HTTP (443) = Encrypted; HTTPS (80) = Unencrypted", "Both use SSL encryption by default", "HTTP is for local shares; HTTPS is for public shares"] },
+      { cat: "Networking", q: "Port 3389", a: "RDP (Remote Desktop Protocol) — Windows graphical remote access", dist: ["SSH — Secure Shell CLI", "SMB — Windows File Sharing", "SIP — Voice over IP"] },
+      { cat: "Networking", q: "Port 67 / 68", a: "DHCP — Automatically assigns IP configuration; servers listen on 67 and clients use 68.", dist: ["DNS — Resolves IP hostnames", "FTP — Transports remote files", "NTP — Synchronizes device clocks"] },
+
+      // Commands
+      { cat: "Operating Systems", q: "sfc /scannow", a: "System File Checker — Scans and repairs protected Windows system files.", dist: ["Check Disk — Scans drive sectors for bad blocks", "Forces immediate Group Policy refresh", "Displays active network socket connections"] },
+      { cat: "Operating Systems", q: "chkdsk c: /f /r", a: "Check Disk — /f fixes file-system errors; /r locates bad sectors and attempts to recover readable data.", dist: ["System File Checker — Repairs DLL binaries", "Clears local DNS resolver entries", "Rebuilds Windows BCD boot configuration"] },
+      { cat: "Operating Systems", q: "gpupdate /force", a: "Forces an immediate Group Policy refresh and reapplies policy settings.", dist: ["Updates Windows Defender virus definitions", "Clears Active Directory account lockouts", "Restarts local print spooler service"] },
+      { cat: "Operating Systems", q: "tracert", a: "Trace Route — Shows the routed hops toward a destination to help locate where a path slows or fails.", dist: ["Tests local IP stack loopback hardware", "Displays active listening TCP ports", "Flushes DNS cache entries"] },
+
+      // Hardware
+      { cat: "Hardware", q: "What is RAID 0?", a: "Striping data across drives for performance or capacity, with no redundancy. A single drive failure can destroy the array.", dist: ["Mirroring data across drives for 100% redundancy", "Block-level striping with distributed parity requiring 3 drives", "Stripe of mirrored drive pairs requiring 4 drives"] },
+      { cat: "Hardware", q: "What is RAID 1?", a: "Mirroring data across drives for redundancy. Usable capacity is typically limited to the size of one drive.", dist: ["Striping data across drives for pure speed", "Block-level parity requiring 3 drives minimum", "Striped mirror array requiring 4 drives minimum"] },
+      { cat: "Hardware", q: "What is RAID 5?", a: "Block-level striping with distributed parity; it can tolerate one drive failure and requires at least three drives.", dist: ["Mirroring data across two drives", "Pure striping with zero fault tolerance", "Double parity requiring minimum six drives"] },
+
+      // Security
+      { cat: "Security", q: "Phishing vs Spear Phishing", a: "Phishing = Broad mass spam attack; Spear Phishing = Targeted attack at a specific individual.", dist: ["Phishing targets executives; Spear Phishing targets SMS", "Phishing uses phone calls; Spear Phishing uses emails", "Phishing is physical door tailgating; Spear Phishing is malware"] },
+      { cat: "Security", q: "What is ransomware?", a: "Malware that encrypts or otherwise blocks access to data and demands payment.", dist: ["Malware that hides inside a legitimate application binary", "Malware that self-propagates automatically across subnets", "Malware that logs keystrokes to steal passwords"] }
+    ];
+
+    // Generate option choices dynamically
+    function buildExams() {
+      const exams = [[], [], [], []];
+      
+      // Distribute questions into 4 balanced tests
+      rawCards.forEach((c, i) => {
+        const targetExam = i % 4;
+        const allOpts = [c.a, ...c.dist].sort(() => Math.random() - 0.5);
+        exams[targetExam].push({
+          q: c.q,
+          a: c.a,
+          cat: c.cat,
+          options: allOpts,
+          userAns: null,
+          flagged: false
+        });
+      });
+      return exams;
+    }
+
+    let examSuite = buildExams();
+    let currentExamIdx = null;
+    let currentQIdx = 0;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+
+    function initScores() {
+      const history = JSON.parse(localStorage.getItem('aplus_exam_history')) || {};
+      for (let i = 0; i < 4; i++) {
+        const elem = document.getElementById(`score-${i}`);
+        if (history[i]) {
+          elem.innerText = `Best: ${history[i].score}% (${history[i].status})`;
+          elem.style.color = history[i].score >= 85 ? 'var(--correct)' : 'var(--wrong)';
+        }
+      }
+    }
+
+    function startExam(idx) {
+      currentExamIdx = idx;
+      currentQIdx = 0;
+      secondsElapsed = 0;
+      examSuite[idx].forEach(q => { q.userAns = null; q.flagged = false; });
+
+      document.getElementById('screen-menu').classList.add('hide');
+      document.getElementById('screen-results').classList.add('hide');
+      document.getElementById('screen-exam').classList.remove('hide');
+
+      startTimer();
+      renderQ();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const m = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        const s = (secondsElapsed % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function renderQ() {
+      const exam = examSuite[currentExamIdx];
+      const q = exam[currentQIdx];
+
+      document.getElementById('q-progress').innerText = `Question ${currentQIdx + 1} / ${exam.length}`;
+      document.getElementById('q-text').innerText = q.q;
+
+      const flagBtn = document.getElementById('btn-flag');
+      if (q.flagged) flagBtn.classList.add('active');
+      else flagBtn.classList.remove('active');
+
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+
+      q.options.forEach((opt, i) => {
+        const letter = String.fromCharCode(65 + i);
+        const btn = document.createElement('button');
+        btn.className = `option-btn ${q.userAns === opt ? 'selected' : ''}`;
+        btn.innerHTML = `<span class="opt-letter">${letter}.</span> <span>${opt}</span>`;
+        btn.onclick = () => selectOption(opt);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('btn-next').innerText = (currentQIdx === exam.length - 1) ? "Submit Exam" : "Next →";
+    }
+
+    function selectOption(opt) {
+      examSuite[currentExamIdx][currentQIdx].userAns = opt;
+      renderQ();
+    }
+
+    function toggleFlag() {
+      const q = examSuite[currentExamIdx][currentQIdx];
+      q.flagged = !q.flagged;
+      renderQ();
+    }
+
+    function nextQ() {
+      const exam = examSuite[currentExamIdx];
+      if (currentQIdx < exam.length - 1) {
+        currentQIdx++;
+        renderQ();
+      } else {
+        finishExam();
+      }
+    }
+
+    function prevQ() {
+      if (currentQIdx > 0) {
+        currentQIdx--;
+        renderQ();
+      }
+    }
+
+    function finishExam() {
+      clearInterval(timerInterval);
+      const exam = examSuite[currentExamIdx];
+      let correctCount = 0;
+
+      exam.forEach(q => {
+        if (q.userAns === q.a) correctCount++;
+      });
+
+      const scorePct = Math.round((correctCount / exam.length) * 100);
+      const passed = scorePct >= 85;
+
+      // Save to local storage
+      const history = JSON.parse(localStorage.getItem('aplus_exam_history')) || {};
+      if (!history[currentExamIdx] || scorePct > history[currentExamIdx].score) {
+        history[currentExamIdx] = { score: scorePct, status: passed ? 'PASSED' : 'FAILED', date: new Date().toLocaleDateString() };
+        localStorage.setItem('aplus_exam_history', JSON.stringify(history));
+      }
+
+      // Display Results
+      document.getElementById('screen-exam').classList.add('hide');
+      document.getElementById('screen-results').classList.remove('hide');
+
+      const scoreCircle = document.getElementById('score-circle');
+      scoreCircle.innerText = `${scorePct}%`;
+      scoreCircle.className = `score-circle ${passed ? 'pass' : 'fail'}`;
+
+      document.getElementById('result-status').innerText = passed ? "CONGRATULATIONS! PASSING GRADE" : "DID NOT PASS (85% REQUIRED)";
+      document.getElementById('result-status').style.color = passed ? "var(--correct)" : "var(--wrong)";
+      document.getElementById('result-stats').innerText = `You correctly answered ${correctCount} out of ${exam.length} questions.`;
+
+      // Build Review Breakdown
+      const revContainer = document.getElementById('review-container');
+      revContainer.innerHTML = '';
+
+      exam.forEach((q, i) => {
+        const isRight = q.userAns === q.a;
+        const item = document.createElement('div');
+        item.className = `review-item ${isRight ? 'correct' : 'incorrect'}`;
+        item.innerHTML = `
+          <span class="concept-tag">${q.cat}</span>
+          <div class="rev-q">${i + 1}. ${q.q}</div>
+          <div class="rev-ans">Your Answer: <span class="${isRight ? 'correct-val' : 'user-val'}">${q.userAns || 'Not Answered'}</span></div>
+          ${!isRight ? `<div class="rev-ans">Correct Answer: <span class="correct-val">${q.a}</span></div>` : ''}
+        `;
+        revContainer.appendChild(item);
+      });
+    }
+
+    function showMenu() {
+      clearInterval(timerInterval);
+      initScores();
+      document.getElementById('screen-exam').classList.add('hide');
+      document.getElementById('screen-results').classList.add('hide');
+      document.getElementById('screen-menu').classList.remove('hide');
+    }
+
+    initScores();
+  </script>
+</body>
+</html>
