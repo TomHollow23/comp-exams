@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CompTIA A+ Practice Exams</title>
+  <title>CompTIA A+ Exam Simulator</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -32,26 +32,43 @@
     .menu-grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; }
     @media (min-width: 500px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
 
-    .exam-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+    .exam-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; }
     .exam-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
     .exam-card h3 { font-size: 1.1rem; color: #fff; margin-bottom: 6px; }
     .exam-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
     .exam-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--accent); background: rgba(56, 189, 248, 0.1); padding: 3px 8px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(56, 189, 248, 0.2); }
-    .score-tag { margin-top: 12px; font-size: 0.75rem; font-weight: 600; color: var(--correct); }
+    .score-tag { margin-top: 12px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
 
     /* Exam Screen */
-    .exam-header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .exam-header { display: flex; flex-direction: column; gap: 12px; background: var(--card-bg); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; }
+    .header-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px; }
+    
     .timer { font-weight: 700; color: var(--accent); font-size: 0.9rem; }
     .q-count { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
 
+    /* Progress Track Bar */
+    .track-bar { width: 100%; height: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; display: flex; margin-bottom: 16px; border: 1px solid var(--border); }
+    .track-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+
     .q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .q-cat { font-size: 0.7rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
     .q-text { font-size: 1.1rem; font-weight: 600; line-height: 1.5; margin-bottom: 20px; }
     
     .options { display: flex; flex-direction: column; gap: 12px; }
     .option-btn { background: #1e293b; border: 1px solid var(--border); color: var(--text); padding: 14px 18px; border-radius: 12px; text-align: left; font-size: 0.95rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; gap: 12px; line-height: 1.4; }
     .option-btn:hover { border-color: var(--accent); background: #26334d; }
     .option-btn.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.15); font-weight: 600; }
+    
+    /* Feedback Styles */
+    .option-btn.correct-ans { border-color: var(--correct) !important; background: rgba(16, 185, 129, 0.2) !important; color: #fff; font-weight: 600; }
+    .option-btn.wrong-ans { border-color: var(--wrong) !important; background: rgba(239, 68, 68, 0.2) !important; opacity: 0.8; }
     .opt-letter { font-weight: 700; color: var(--accent); }
+
+    .explanation-box { margin-top: 16px; padding: 14px; background: #102a43; border: 1px solid var(--accent); border-radius: 10px; font-size: 0.85rem; line-height: 1.45; color: #e2e8f0; }
+
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .toggle-wrap input { cursor: pointer; }
 
     .exam-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; border: none; cursor: pointer; font-size: 0.85rem; transition: all 0.15s; }
@@ -76,7 +93,6 @@
     .rev-ans { font-size: 0.85rem; margin-top: 6px; line-height: 1.4; }
     .user-val { color: var(--wrong); }
     .correct-val { color: var(--correct); font-weight: 600; }
-    .concept-tag { font-size: 0.75rem; color: var(--accent); font-weight: bold; text-transform: uppercase; margin-bottom: 6px; display: block; }
 
     .hide { display: none !important; }
   </style>
@@ -84,51 +100,66 @@
 <body>
   <header>
     <h1>CompTIA A+ <span>Exam Simulator</span></h1>
-    <p class="sub">Vetted 230-Question Assessment Suite</p>
+    <p class="sub">230 Vetted Questions across 4 Practice Exams</p>
   </header>
 
   <div class="container">
-    <!-- Screen 1: Exam Menu -->
+    <!-- Menu Screen -->
     <div id="screen-menu">
       <div class="menu-grid">
         <div class="exam-card" onclick="startExam(0)">
-          <span class="exam-badge">220-1201</span>
-          <h3>Core 1 — Exam A</h3>
-          <p>58 Questions covering Mobile Devices, Networking, & Hardware.</p>
+          <span class="exam-badge">Core 1 (220-1201)</span>
+          <h3>Exam A — Hardware & Mobile</h3>
+          <p>58 Questions covering Mobile Devices, Hardware, & Networking.</p>
           <div class="score-tag" id="score-0">Not Attempted</div>
         </div>
         <div class="exam-card" onclick="startExam(1)">
-          <span class="exam-badge">220-1201</span>
-          <h3>Core 1 — Exam B</h3>
-          <p>57 Questions covering Cloud, Virtualization, & HW/Net Troubleshooting.</p>
+          <span class="exam-badge">Core 1 (220-1201)</span>
+          <h3>Exam B — Cloud & Net Troubleshooting</h3>
+          <p>57 Questions covering Virtualization, Cloud, & Network Troubleshooting.</p>
           <div class="score-tag" id="score-1">Not Attempted</div>
         </div>
         <div class="exam-card" onclick="startExam(2)">
-          <span class="exam-badge">220-1202</span>
-          <h3>Core 2 — Exam A</h3>
-          <p>58 Questions covering Operating Systems & Security.</p>
+          <span class="exam-badge">Core 2 (220-1202)</span>
+          <h3>Exam A — OS & Security</h3>
+          <p>58 Questions covering Operating Systems & Core Security Concepts.</p>
           <div class="score-tag" id="score-2">Not Attempted</div>
         </div>
         <div class="exam-card" onclick="startExam(3)">
-          <span class="exam-badge">220-1202</span>
-          <h3>Core 2 — Exam B</h3>
+          <span class="exam-badge">Core 2 (220-1202)</span>
+          <h3>Exam B — Software & Operations</h3>
           <p>57 Questions covering Software Troubleshooting & Operational Procedures.</p>
           <div class="score-tag" id="score-3">Not Attempted</div>
         </div>
       </div>
     </div>
 
-    <!-- Screen 2: Exam View -->
+    <!-- Exam Screen -->
     <div id="screen-exam" class="hide">
+      <div class="track-bar">
+        <div class="track-fill" id="track-fill" style="width: 0%;"></div>
+      </div>
+
       <div class="exam-header">
-        <span class="q-count" id="q-progress">Question 1 / 58</span>
-        <button class="btn btn-flag" id="btn-flag" onclick="toggleFlag()">⚑ Flag</button>
-        <span class="timer" id="timer">00:00</span>
+        <div class="header-top">
+          <span class="q-count" id="q-progress">Question 1 / 58</span>
+          <button class="btn btn-flag" id="btn-flag" onclick="toggleFlag()">⚑ Flag</button>
+          <span class="timer" id="timer">00:00</span>
+        </div>
+        <div class="header-controls">
+          <label class="toggle-wrap">
+            <input type="checkbox" id="instant-feedback-toggle" onchange="toggleInstantFeedback()">
+            <span>Instant Feedback Mode</span>
+          </label>
+          <span id="live-score" style="display: none; font-weight: 700;">Score: 0/0</span>
+        </div>
       </div>
 
       <div class="q-card">
-        <p class="q-text" id="q-text">Question text goes here...</p>
+        <span class="q-cat" id="q-cat">Category</span>
+        <p class="q-text" id="q-text">Question text...</p>
         <div class="options" id="options-container"></div>
+        <div class="explanation-box hide" id="explanation-box"></div>
       </div>
 
       <div class="exam-nav">
@@ -138,81 +169,333 @@
       </div>
     </div>
 
-    <!-- Screen 3: Results & Analysis -->
+    <!-- Results Screen -->
     <div id="screen-results" class="hide">
       <div class="results-card">
         <h2 id="result-title">Exam Complete</h2>
         <div class="score-circle" id="score-circle">0%</div>
         <p id="result-status" style="font-weight: 700; margin-bottom: 12px;"></p>
         <p id="result-stats" style="color: var(--text-muted); font-size: 0.9rem;"></p>
-        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+        <div style="margin-top: 20px;">
           <button class="btn btn-pri" onclick="showMenu()">Back to Menu</button>
         </div>
       </div>
 
-      <h3 style="margin-bottom: 16px;">Question Review & Study Guide</h3>
+      <h3 style="margin-bottom: 16px;">Question Review & Explanations</h3>
       <div class="review-list" id="review-container"></div>
     </div>
   </div>
 
   <script>
-    // Embedded 230 Vetted CompTIA Questions Data
-    const rawCards = [
-      // Mobile
-      { cat: "Mobile Devices", q: "What is a SO-DIMM?", a: "A compact memory module used in laptops and other small devices. It is shorter than a desktop DIMM.", dist: ["A type of desktop motherboard connector", "A high-speed storage protocol for M.2 drives", "A liquid cooling radiator fitting"] },
-      { cat: "Mobile Devices", q: "A laptop battery is swollen. What should you do?", a: "Stop using and charging the device. Do not puncture or compress the battery; follow safe removal guidance.", dist: ["Drain the battery completely to discharge gas", "Place it in freezer to reduce swell", "Puncture outer casing carefully to relieve pressure"] },
-      { cat: "Mobile Devices", q: "A laptop display shows an image, but touch input does not work. What component is the likely fault?", a: "The digitizer or its connection.", dist: ["The GPU inverter card", "The CCFL backlight tube", "The system RAM module"] },
-      { cat: "Mobile Devices", q: "A laptop has a very dim image that is easier to see under a flashlight. What should you suspect?", a: "A backlight or display power problem.", dist: ["Corrupted GPU display driver", "Depleted CMOS battery", "Misconfigured refresh rate"] },
-      { cat: "Mobile Devices", q: "What does a laptop docking station provide?", a: "A single connection point for power and peripherals such as displays, Ethernet, keyboard, and mouse.", dist: ["Extra dedicated GPU processing power", "Additional system RAM capacity", "External RAID battery backup"] },
-      
-      // Networking
-      { cat: "Networking", q: "Port 22", a: "SSH / SFTP (Secure Shell) — Encrypted remote CLI and file transfer", dist: ["Telnet — Unencrypted remote CLI", "DNS — Domain Name System", "RDP — Remote Desktop Protocol"] },
-      { cat: "Networking", q: "Port 53", a: "DNS (Domain Name System) — Resolves domain names to IP addresses", dist: ["DHCP — Automatic IP assignment", "HTTP — Web traffic", "SNMP — System log queries"] },
-      { cat: "Networking", q: "Port 80 vs 443", a: "HTTP (80) = Unencrypted web traffic. HTTPS (443) = Web traffic protected with TLS.", dist: ["HTTP (443) = Encrypted; HTTPS (80) = Unencrypted", "Both use SSL encryption by default", "HTTP is for local shares; HTTPS is for public shares"] },
-      { cat: "Networking", q: "Port 3389", a: "RDP (Remote Desktop Protocol) — Windows graphical remote access", dist: ["SSH — Secure Shell CLI", "SMB — Windows File Sharing", "SIP — Voice over IP"] },
-      { cat: "Networking", q: "Port 67 / 68", a: "DHCP — Automatically assigns IP configuration; servers listen on 67 and clients use 68.", dist: ["DNS — Resolves IP hostnames", "FTP — Transports remote files", "NTP — Synchronizes device clocks"] },
-
-      // Commands
-      { cat: "Operating Systems", q: "sfc /scannow", a: "System File Checker — Scans and repairs protected Windows system files.", dist: ["Check Disk — Scans drive sectors for bad blocks", "Forces immediate Group Policy refresh", "Displays active network socket connections"] },
-      { cat: "Operating Systems", q: "chkdsk c: /f /r", a: "Check Disk — /f fixes file-system errors; /r locates bad sectors and attempts to recover readable data.", dist: ["System File Checker — Repairs DLL binaries", "Clears local DNS resolver entries", "Rebuilds Windows BCD boot configuration"] },
-      { cat: "Operating Systems", q: "gpupdate /force", a: "Forces an immediate Group Policy refresh and reapplies policy settings.", dist: ["Updates Windows Defender virus definitions", "Clears Active Directory account lockouts", "Restarts local print spooler service"] },
-      { cat: "Operating Systems", q: "tracert", a: "Trace Route — Shows the routed hops toward a destination to help locate where a path slows or fails.", dist: ["Tests local IP stack loopback hardware", "Displays active listening TCP ports", "Flushes DNS cache entries"] },
-
-      // Hardware
-      { cat: "Hardware", q: "What is RAID 0?", a: "Striping data across drives for performance or capacity, with no redundancy. A single drive failure can destroy the array.", dist: ["Mirroring data across drives for 100% redundancy", "Block-level striping with distributed parity requiring 3 drives", "Stripe of mirrored drive pairs requiring 4 drives"] },
-      { cat: "Hardware", q: "What is RAID 1?", a: "Mirroring data across drives for redundancy. Usable capacity is typically limited to the size of one drive.", dist: ["Striping data across drives for pure speed", "Block-level parity requiring 3 drives minimum", "Striped mirror array requiring 4 drives minimum"] },
-      { cat: "Hardware", q: "What is RAID 5?", a: "Block-level striping with distributed parity; it can tolerate one drive failure and requires at least three drives.", dist: ["Mirroring data across two drives", "Pure striping with zero fault tolerance", "Double parity requiring minimum six drives"] },
-
-      // Security
-      { cat: "Security", q: "Phishing vs Spear Phishing", a: "Phishing = Broad mass spam attack; Spear Phishing = Targeted attack at a specific individual.", dist: ["Phishing targets executives; Spear Phishing targets SMS", "Phishing uses phone calls; Spear Phishing uses emails", "Phishing is physical door tailgating; Spear Phishing is malware"] },
-      { cat: "Security", q: "What is ransomware?", a: "Malware that encrypts or otherwise blocks access to data and demands payment.", dist: ["Malware that hides inside a legitimate application binary", "Malware that self-propagates automatically across subnets", "Malware that logs keystrokes to steal passwords"] }
+    const domains = [
+      { id: 'mobile-devices', exam: 'Core 1', name: 'Mobile Devices' },
+      { id: 'networking', exam: 'Core 1', name: 'Networking' },
+      { id: 'hardware', exam: 'Core 1', name: 'Hardware' },
+      { id: 'virtualization-cloud', exam: 'Core 1', name: 'Virtualization & Cloud' },
+      { id: 'hardware-network-troubleshooting', exam: 'Core 1', name: 'HW & Net Troubleshooting' },
+      { id: 'operating-systems', exam: 'Core 2', name: 'Operating Systems' },
+      { id: 'security', exam: 'Core 2', name: 'Security' },
+      { id: 'software-troubleshooting', exam: 'Core 2', name: 'Software Troubleshooting' },
+      { id: 'operational-procedures', exam: 'Core 2', name: 'Operational Procedures' }
     ];
 
-    // Generate option choices dynamically
-    function buildExams() {
-      const exams = [[], [], [], []];
-      
-      // Distribute questions into 4 balanced tests
-      rawCards.forEach((c, i) => {
-        const targetExam = i % 4;
-        const allOpts = [c.a, ...c.dist].sort(() => Math.random() - 0.5);
-        exams[targetExam].push({
-          q: c.q,
-          a: c.a,
-          cat: c.cat,
-          options: allOpts,
-          userAns: null,
-          flagged: false
-        });
-      });
-      return exams;
+    function makeEntries(domainId, entries) {
+      const dom = domains.find(d => d.id === domainId);
+      return entries.map(([q, a]) => ({ domainId, exam: dom.exam, catName: dom.name, q, a }));
     }
 
-    let examSuite = buildExams();
+    const masterDataset = [
+      ...makeEntries('mobile-devices', [
+        ['What is a SO-DIMM?', 'A compact memory module used in laptops and other small devices. It is shorter than a desktop DIMM.'],
+        ['A laptop battery is swollen. What should you do?', 'Stop using and charging the device. Do not puncture or compress the battery; follow the manufacturer’s safe removal and recycling guidance.'],
+        ['A laptop display shows an image, but touch input does not work. What component is the likely fault?', 'The digitizer or its connection. The LCD can display normally while the touch layer has failed.'],
+        ['A laptop has a very dim image that is easier to see under a flashlight. What should you suspect?', 'A backlight or display power problem. Check the panel, backlight circuit, and display cable before replacing the whole laptop.'],
+        ['What does a laptop docking station provide?', 'A single connection point for power and peripherals such as displays, Ethernet, keyboard, and mouse.'],
+        ['What is a port replicator?', 'A device that exposes additional connections for a laptop; unlike many docks, it may provide less functionality and rely on the laptop’s own ports.'],
+        ['When is USB-C DisplayPort Alt Mode useful?', 'When a USB-C port carries a native DisplayPort video signal, allowing compatible adapters or monitors without a separate GPU connector.'],
+        ['What is the difference between a SIM and an eSIM?', 'A SIM is a removable subscriber identity module. An eSIM is a programmable module built into the device and provisioned digitally.'],
+        ['A phone has cellular service but cannot use mobile data. What setting should you check first?', 'Confirm mobile data is enabled and that the correct carrier/APN settings and data plan are active.'],
+        ['What is mobile tethering?', 'Sharing a phone’s internet connection with another device, commonly over Wi-Fi, USB, or Bluetooth.'],
+        ['What is the difference between a mobile hotspot and Bluetooth tethering?', 'A hotspot shares internet over Wi-Fi and can serve multiple clients; Bluetooth tethering is typically slower and used for a direct low-power connection.'],
+        ['What can prevent a phone from syncing mail, contacts, and calendar?', 'Incorrect account credentials, disabled sync, a network issue, or an incorrect server configuration. Check account status and sync settings.'],
+        ['What does airplane mode do?', 'It disables radio transmitters such as cellular and usually Wi-Fi/Bluetooth initially; Wi-Fi or Bluetooth can often be re-enabled separately.'],
+        ['What is NFC commonly used for on mobile devices?', 'Very short-range communication such as tap-to-pay, badge access, and quick device pairing.'],
+        ['What should you try when a Bluetooth accessory will not pair?', 'Confirm both devices support compatible Bluetooth profiles, enable pairing mode, remove stale pairings, and keep the devices nearby.'],
+        ['A laptop Wi-Fi card has two antenna leads. Why must they be reconnected correctly?', 'The antenna leads provide the radio paths used for transmit and receive diversity. A loose or misplaced lead can reduce range or prevent a connection.'],
+        ['What is a mobile device digitizer?', 'The touch-sensitive layer that detects finger or stylus input and reports its position to the operating system.'],
+        ['What is a practical first step when an app is frozen on a mobile device?', 'Force-close the app, reopen it, and check for app or operating-system updates before resetting the device.']
+      ]),
+      ...makeEntries('networking', [
+        ['Port 22', 'SSH / SFTP (Secure Shell) — Encrypted remote CLI and file transfer'],
+        ['Port 53', 'DNS (Domain Name System) — Resolves domain names to IP addresses'],
+        ['Port 80 vs 443', 'HTTP (80) = Unencrypted web traffic. HTTPS (443) = Web traffic protected with TLS.'],
+        ['Port 3389', 'RDP (Remote Desktop Protocol) — Windows graphical remote access'],
+        ['Port 67 / 68', 'DHCP — Automatically assigns IP configuration; servers listen on 67 and clients use 68.'],
+        ['Ports 20 / 21', 'FTP — Port 21 carries control traffic; port 20 is traditionally used for active-mode data. FTP is not encrypted by default.'],
+        ['Port 23', 'Telnet — Remote terminal access that sends traffic, including credentials, in plaintext. Prefer SSH.'],
+        ['Port 25', 'SMTP — Traditionally used for server-to-server email transfer. Client submission commonly uses 587 with TLS.'],
+        ['Port 110', 'POP3 — Retrieves email, traditionally downloading messages to a client without TLS by default.'],
+        ['Port 123', 'NTP — Network Time Protocol synchronizes device clocks, usually over UDP.'],
+        ['Port 143', 'IMAP — Synchronizes and manages mail while messages remain on the mail server; secure IMAP commonly uses 993.'],
+        ['Ports 161 / 162', 'SNMP — 161 is used for queries and polling; 162 is commonly used for traps and notifications.'],
+        ['Ports 389 / 636', 'LDAP directory access commonly uses 389; LDAPS commonly uses 636 for TLS-protected connections.'],
+        ['Port 445', 'SMB — Windows file and printer sharing, including access to network shares.'],
+        ['Port 514', 'Syslog — Commonly transports system log messages over UDP; secure and reliable variants may use other configurations.'],
+        ['Port 587', 'SMTP submission — Commonly used by mail clients to submit outgoing email, typically with STARTTLS.'],
+        ['Ports 993 / 995', 'IMAPS (993) and POP3S (995) provide TLS-protected IMAP and POP3 connections.'],
+        ['Ports 5060 / 5061', 'SIP signaling for voice and video sessions; 5060 is commonly unencrypted and 5061 commonly uses TLS.'],
+        ['What is the difference between TCP and UDP?', 'TCP establishes a connection and provides ordered, reliable delivery. UDP has lower overhead and does not guarantee delivery or order.'],
+        ['What does DNS do?', 'It resolves human-readable names such as example.com to IP addresses and can also provide other records such as mail-server information.'],
+        ['What does DHCP provide to a client?', 'A lease containing network settings such as an IP address, subnet mask or prefix, default gateway, and DNS servers.'],
+        ['What is the difference between a DHCP reservation and a static IP?', 'A reservation makes the DHCP server consistently lease an address to a device. A static address is configured directly on the device.'],
+        ['What is the default gateway?', 'The local router address a host uses to send traffic to destinations outside its local subnet.'],
+        ['169.254.x.x', 'APIPA / link-local IPv4 — Often indicates the device did not obtain an address from DHCP.'],
+        ['127.0.0.1', 'IPv4 loopback — Refers to the local host and can test the local TCP/IP stack without reaching the network.'],
+        ['Subnet Mask /24', '255.255.255.0 — A typical IPv4 /24 has 256 total addresses, with 254 normally usable by hosts.'],
+        ['Default Gateway Missing', 'The host may reach devices on its local subnet but cannot route traffic to other networks or the public internet.'],
+        ['What IPv4 ranges are reserved for private networks?', '10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16. These addresses are not routed on the public internet.'],
+        ['What is an IPv6 link-local address?', 'An address in fe80::/10 used for communication on the local link. Routers do not forward link-local traffic.'],
+        ['What is SLAAC?', 'Stateless Address Autoconfiguration lets an IPv6 host create its own address using router advertisements, without a DHCPv6 server assigning the address.'],
+        ['What is the difference between a MAC address and an IP address?', 'A MAC address identifies a network interface on the local link. An IP address identifies a host’s logical network location and supports routing.'],
+        ['What does NAT do?', 'Network Address Translation maps addresses between networks, commonly allowing many private IPv4 devices to share a public IPv4 address.'],
+        ['What is a VLAN?', 'A logical Layer 2 network that separates broadcast domains on shared switching infrastructure.'],
+        ['What is a VPN?', 'An encrypted tunnel that carries network traffic across an untrusted network to a private network or service.'],
+        ['Which Wi-Fi band usually offers longer range: 2.4 GHz or 5 GHz?', '2.4 GHz generally travels farther and penetrates obstacles better, but is more congested and has fewer non-overlapping channels.'],
+        ['What is a common trade-off of 6 GHz Wi-Fi?', 'It offers additional spectrum and less legacy congestion, but compatible clients are required and the higher frequency typically has shorter range through walls.'],
+        ['What does Wi-Fi 6 (802.11ax) improve?', 'Efficiency and capacity in busy environments, including use of OFDMA and improved multi-user scheduling.'],
+        ['What does an access point do?', 'It connects wireless clients to a wired network and advertises one or more wireless networks.'],
+        ['What is PoE?', 'Power over Ethernet delivers electrical power and data over compatible Ethernet cabling to devices such as access points and IP cameras.'],
+        ['What does a network switch learn to forward Ethernet frames?', 'It learns source MAC addresses and associates them with switch ports in its MAC address table.'],
+        ['What can cause a weak Wi-Fi signal?', 'Distance, walls, interference, antenna placement, channel congestion, or a failing access point/client radio.'],
+        ['What is the purpose of a VPN concentrator?', 'It terminates and manages multiple VPN connections, commonly for remote users or site-to-site links.']
+      ]),
+      ...makeEntries('hardware', [
+        ['What is the function of the CPU?', 'It executes instructions and performs calculations. Performance depends on factors such as architecture, clock rate, core count, cache, and thermal conditions.'],
+        ['What does thermal paste do?', 'It fills microscopic gaps between a processor and heatsink to improve heat transfer. A dry or poorly applied layer can contribute to overheating.'],
+        ['What is the purpose of a CPU socket?', 'It provides the electrical and mechanical connection between a compatible processor and the motherboard. Socket type must match the CPU.'],
+        ['What is the difference between DIMM and SO-DIMM memory?', 'DIMMs are full-size modules common in desktops; SO-DIMMs are shorter modules common in laptops and compact systems.'],
+        ['What is ECC memory?', 'Error-correcting memory that can detect and correct certain memory errors; it requires compatible system support.'],
+        ['What happens when compatible RAM is installed in dual-channel mode?', 'The memory controller can access two memory channels in parallel, increasing theoretical memory bandwidth.'],
+        ['What is the difference between DDR4 and DDR5 DIMMs?', 'They use different electrical specifications and keying; they are not interchangeable in the same memory slot.'],
+        ['What does a motherboard chipset coordinate?', 'Communication among the processor, memory, storage, expansion, and peripheral interfaces supported by the platform.'],
+        ['What is the purpose of a PCIe x16 slot?', 'It commonly hosts a graphics card or another high-bandwidth expansion card. The physical slot size does not always determine the electrical lane count.'],
+        ['What does an M.2 slot support?', 'Compact modules such as SATA or NVMe storage and some wireless cards; supported keying and protocols depend on the motherboard.'],
+        ['What is the difference between SATA SSD and NVMe SSD?', 'A SATA SSD uses the SATA storage interface. An NVMe SSD uses the NVMe protocol over PCIe and can provide higher throughput and lower latency.'],
+        ['What is the purpose of a PSU 24-pin connector?', 'It supplies primary power from the power supply to the motherboard. CPU power is normally supplied by a separate EPS connector.'],
+        ['What is the purpose of the motherboard CR2032 coin-cell battery?', 'It maintains the real-time clock and firmware settings when the system is unplugged; a depleted battery can cause clock and setup-setting loss.'],
+        ['What does UEFI replace or extend compared with legacy BIOS?', 'UEFI provides a modern firmware interface with features such as GPT boot support, Secure Boot, and graphical setup on some systems.'],
+        ['What is a GPU?', 'A graphics processing unit that renders images and video; discrete GPUs have their own board, cooling, and often dedicated video memory.'],
+        ['What is the purpose of an ATX power supply?', 'It converts AC input to the regulated DC voltages required by computer components and provides standardized connectors.'],
+        ['Why should you not mix modular power-supply cables from different PSU models?', 'The PSU-side pinouts are not universally standardized. An incompatible cable can send incorrect voltages and damage components.'],
+        ['What is RAID 0?', 'Striping data across drives for performance or capacity, with no redundancy. A single drive failure can destroy the array.'],
+        ['What is RAID 1?', 'Mirroring data across drives for redundancy. Usable capacity is typically limited to the size of one drive in a two-drive mirror.'],
+        ['What is RAID 5?', 'Block-level striping with distributed parity; it can tolerate one drive failure and requires at least three drives.'],
+        ['What is RAID 10?', 'A stripe of mirrored drive pairs. It combines performance with redundancy and requires at least four drives.'],
+        ['What connector commonly carries digital video and audio to a TV?', 'HDMI. Check the device and cable versions for supported resolution, refresh rate, and features.'],
+        ['What is the difference between USB-A and USB-C?', 'They describe connector shapes, not data speed by themselves. USB-C can support different data rates, power delivery, and alternate modes depending on the device.'],
+        ['What is the purpose of a KVM switch?', 'It lets one keyboard, video display, and mouse control multiple computers.'],
+        ['What should be verified before installing a replacement laptop screen?', 'Panel size, resolution, connector type and pin count, mounting points, refresh/features, and cable compatibility.'],
+        ['Why use an anti-static wrist strap when handling components?', 'It equalizes electrical potential between the technician and equipment to reduce electrostatic discharge risk.'],
+        ['What is the difference between an inkjet and laser printer?', 'Inkjet printers spray liquid ink onto media. Laser printers use a charged drum, toner, and heat to fuse the image to paper.'],
+        ['What does a printer fuser do?', 'It uses heat and pressure to bond toner to paper in a laser printer. A failing fuser may cause smearing or incomplete fixation.'],
+        ['What does a printer pickup roller do?', 'It separates and feeds a sheet from the paper tray into the printer’s paper path. A worn roller can cause misfeeds or no-pick symptoms.'],
+        ['What is a thermal printer commonly used for?', 'Direct thermal or thermal-transfer printing, often for receipts, labels, or barcodes.']
+      ]),
+      ...makeEntries('virtualization-cloud', [
+        ['What is a hypervisor?', 'Software or firmware that creates and manages virtual machines by sharing host hardware resources.'],
+        ['What is a Type 1 hypervisor?', 'A bare-metal hypervisor that runs directly on the physical host hardware.'],
+        ['What is a Type 2 hypervisor?', 'A hosted hypervisor that runs as an application on top of a host operating system.'],
+        ['What is a virtual machine snapshot?', 'A point-in-time state of a VM’s disk and sometimes memory/configuration. It is useful for rollback but is not a substitute for an independent backup.'],
+        ['What is a VM guest?', 'The operating system running inside the virtual machine. The physical or hypervisor-managed machine that runs it is the host.'],
+        ['What is VDI?', 'Virtual Desktop Infrastructure hosts desktop environments centrally and delivers them to users over a network.'],
+        ['What does IaaS provide?', 'On-demand infrastructure such as virtual machines, storage, and networking; the customer manages the operating system and applications.'],
+        ['What does PaaS provide?', 'A managed platform for building and running applications; the provider manages much of the underlying operating system and infrastructure.'],
+        ['What does SaaS provide?', 'A complete application delivered as a service; the provider manages the application and underlying platform.'],
+        ['What is a hybrid cloud?', 'A deployment that combines private infrastructure with public cloud services and enables workloads or data to work across them.'],
+        ['What is the difference between public and private cloud?', 'Public cloud services are offered on shared provider infrastructure; private cloud resources are dedicated to one organization, on-premises or hosted.'],
+        ['What does cloud elasticity mean?', 'Resources can scale up or down as demand changes, often automatically.'],
+        ['What is a cloud availability zone?', 'An isolated location within a cloud region designed to reduce the impact of a single facility or infrastructure failure.'],
+        ['What is the shared responsibility model?', 'The cloud provider secures the cloud infrastructure, while the customer remains responsible for areas such as identities, data, and configuration depending on the service model.']
+      ]),
+      ...makeEntries('hardware-network-troubleshooting', [
+        ['What is the first step in a standard troubleshooting process?', 'Identify the problem: gather user details, observe symptoms, ask questions, and check for recent changes.'],
+        ['Why should you establish a theory before changing a system?', 'A likely cause narrows the investigation. Test the theory safely and revise it if the evidence does not support it.'],
+        ['After implementing a fix, what should you do?', 'Verify full functionality, take preventive steps if appropriate, and document findings, actions, and outcomes.'],
+        ['A desktop powers on but has no video. What should you check first?', 'Confirm monitor power and input, cable seating, brightness, and the selected graphics output before replacing internal parts.'],
+        ['What does a POST beep code indicate?', 'Firmware detected a hardware condition during power-on self-test. Interpret the pattern using the system or motherboard manufacturer’s documentation.'],
+        ['A computer shuts down under load and feels very hot. What is a likely cause?', 'Thermal shutdown from obstructed airflow, failed fans, poor heatsink contact, or dust buildup. Check temperatures and cooling before stressing it again.'],
+        ['What can repeated disk SMART warnings indicate?', 'A storage device may be failing. Back up important data promptly and replace the drive after confirming the warning.'],
+        ['A system reports a memory error during startup. What is a sensible isolation step?', 'Power down, reseat the memory, then test compatible modules one at a time in the recommended slots.'],
+        ['What tool checks electrical voltage, resistance, and continuity?', 'A multimeter. Select the correct mode and range and use safe procedures for the circuit being tested.'],
+        ['What tool verifies Ethernet cable wire mapping and continuity?', 'A cable tester. A certification tester can also assess whether a run meets a particular cabling standard.'],
+        ['What does a loopback plug test?', 'It loops transmit signals back to receive pins to help test a port or interface without another network device.'],
+        ['A print job is stuck in the queue. What should you check?', 'Confirm the selected printer and connection, clear or restart the affected queue, and verify the print spooler service and driver.'],
+        ['A laser print has repeated marks at regular intervals. What does the spacing suggest?', 'A rotating imaging component such as a drum or roller may be damaged or contaminated; compare the defect spacing with the part circumference.'],
+        ['A user receives an APIPA address. Which service should you investigate?', 'DHCP. Check link status, the DHCP server or relay, scope availability, and whether the client can reach the correct network.'],
+        ['A device can reach an IP address but not a hostname. What should you investigate?', 'DNS resolution: check the configured DNS server and test name lookup separately from raw IP connectivity.'],
+        ['A wired link repeatedly drops to a lower speed. What should you check?', 'Cable condition and category, connector termination, port configuration, and whether both ends support the desired speed and duplex.'],
+        ['What can a duplex mismatch cause?', 'Poor throughput, collisions on half-duplex links, and increasing errors or retransmissions. Configure both ends consistently, usually for auto-negotiation.'],
+        ['What can cause intermittent Wi-Fi disconnects?', 'Radio interference, weak signal, overloaded access point, driver or firmware issues, roaming configuration, or power-saving behavior.'],
+        ['A network connection has high latency but little packet loss. What does that indicate?', 'Packets are taking too long to travel. Investigate congestion, wireless interference, routing distance, and overloaded network devices.'],
+        ['What is the purpose of a Wi-Fi analyzer?', 'It helps inspect nearby wireless networks, channel use, signal strength, and interference to guide access-point placement or channel selection.'],
+        ['Why test with a known-good cable or port?', 'It isolates whether the fault follows the device, the cable, or the network port without changing several variables at once.'],
+        ['What should you do before opening a power supply for repair?', 'Do not open it. Power supplies can retain dangerous voltage; replace the unit or use qualified service procedures.'],
+        ['What is a common symptom of a failing CMOS/RTC battery?', 'The system clock resets or firmware settings are lost after power is removed.'],
+        ['What might cause a laptop to charge only when the connector is held at an angle?', 'A damaged charger tip, DC jack, or internal power connection. Stop stressing the connector and inspect with a known-good compatible adapter.'],
+        ['What information belongs in a hardware troubleshooting ticket?', 'Symptoms, affected device and user, relevant error messages, tests performed, parts changed, results, and any follow-up actions.']
+      ]),
+      ...makeEntries('operating-systems', [
+        ['sfc /scannow', 'System File Checker — Scans and repairs protected Windows system files.'],
+        ['chkdsk c: /f /r', 'Check Disk — /f fixes file-system errors; /r locates bad sectors and attempts to recover readable data.'],
+        ['gpupdate /force', 'Forces an immediate Group Policy refresh and reapplies policy settings.'],
+        ['tracert', 'Trace Route — Shows the routed hops toward a destination to help locate where a path slows or fails.'],
+        ['ipconfig /displaydns', 'Displays entries currently stored in the local Windows DNS resolver cache.'],
+        ['What is the purpose of an operating-system installation media?', 'It starts setup or recovery tools so an operating system can be installed, repaired, or restored.'],
+        ['What is the difference between an in-place upgrade and a clean installation?', 'An in-place upgrade replaces or updates the OS while retaining supported settings and files. A clean installation starts with a fresh OS installation and may erase existing data.'],
+        ['What is the difference between GPT and MBR partitioning?', 'GPT supports modern UEFI boot and large disks with many partitions. MBR is an older scheme with legacy limitations, including a roughly 2 TB disk-size limit.'],
+        ['What is the difference between NTFS and exFAT?', 'NTFS supports Windows permissions, journaling, and advanced features. exFAT is designed for removable storage interoperability and large files, but lacks NTFS permissions and journaling.'],
+        ['What does Disk Management do in Windows?', 'It creates, formats, resizes, and assigns letters to supported disk volumes and shows disk initialization and health states.'],
+        ['What does Device Manager help diagnose?', 'Hardware devices and their drivers, including disabled devices, resource status, and driver errors.'],
+        ['What information can Event Viewer provide?', 'System, application, and security logs that help correlate errors, warnings, and service events with a problem.'],
+        ['What does Task Manager show?', 'Running processes, application status, resource usage, startup apps, users, and services depending on the Windows version and view.'],
+        ['What is the Windows Registry?', 'A hierarchical database that stores configuration for Windows, hardware, users, and applications. Back up before editing it.'],
+        ['What is the purpose of Windows Safe Mode?', 'It starts Windows with a limited set of drivers and services to help isolate startup, driver, or software problems.'],
+        ['What does DISM /Online /Cleanup-Image /RestoreHealth do?', 'It repairs the running Windows component store, which can help SFC restore protected system files.'],
+        ['What does ipconfig /flushdns do?', 'It clears the local Windows DNS resolver cache so new name lookups are requested.'],
+        ['What does nslookup test?', 'DNS name resolution by querying a configured or specified DNS server.'],
+        ['What does netstat show?', 'Network connections, listening ports, and related statistics, with available details depending on command options.'],
+        ['What does the Linux command pwd show?', 'The current working directory.'],
+        ['What does the Linux command ls do?', 'Lists directory contents; options can show hidden files and detailed metadata.'],
+        ['What does sudo do on Linux or macOS?', 'Runs a command with elevated privileges after authorization, subject to the user’s permissions and system policy.'],
+        ['What does grep do in a Unix-like shell?', 'Searches input for lines matching a text pattern.'],
+        ['What is the purpose of macOS Activity Monitor?', 'It displays processes and resource use such as CPU, memory, energy, disk, and network activity.'],
+        ['What does a Linux package manager do?', 'Installs, updates, and removes software packages and resolves dependencies from configured repositories.'],
+        ['Why should you use a 64-bit operating system on compatible hardware?', 'It can address substantially more memory than a 32-bit OS and run 64-bit applications, subject to OS and hardware support.'],
+        ['What is a restore point?', 'A Windows snapshot of certain system files and settings used to roll back system changes; it is not a backup of personal files.'],
+        ['What is the difference between a standard user and an administrator account?', 'A standard user has limited rights for routine work. An administrator can make system-wide changes and should be used only when needed.'],
+        ['What should you check before upgrading an operating system?', 'Hardware and application compatibility, storage and memory requirements, licensing, backups, and a recovery plan.']
+      ]),
+      ...makeEntries('security', [
+        ['What are the three parts of the CIA security triad?', 'Confidentiality protects information from unauthorized disclosure; integrity prevents unauthorized changes; availability keeps systems and data accessible.'],
+        ['What is the principle of least privilege?', 'Give each user or service only the access needed to perform its authorized tasks, and remove access when it is no longer required.'],
+        ['What is multifactor authentication?', 'Authentication that combines different factor types, such as something you know, have, or are. Two passwords are not two different factors.'],
+        ['What is role-based access control?', 'Permissions are assigned to job or system roles, and users receive the access associated with their approved roles.'],
+        ['What is phishing?', 'A deceptive message or website that tries to trick someone into revealing information, opening a malicious attachment, or taking an unsafe action.'],
+        ['What is smishing?', 'A phishing attempt delivered by SMS or other text messaging.'],
+        ['What is vishing?', 'A voice or phone-based social-engineering attempt, often impersonating a trusted person or organization.'],
+        ['What is tailgating in physical security?', 'Following an authorized person into a secured area without independently using approved access credentials.'],
+        ['What is ransomware?', 'Malware that encrypts or otherwise blocks access to data and demands payment. Isolate affected systems and follow incident-response procedures.'],
+        ['What is a Trojan horse?', 'Malicious software disguised as legitimate or useful software; it does not self-replicate in the same way as a worm.'],
+        ['What is a worm?', 'Self-propagating malware that spreads across systems or networks, often by exploiting vulnerabilities.'],
+        ['What is spyware?', 'Software that secretly monitors activity or collects information without appropriate consent.'],
+        ['What is a rootkit?', 'Malware designed to hide its presence and maintain privileged access, making detection and removal difficult.'],
+        ['What does endpoint protection do?', 'Detects and helps prevent malicious or suspicious activity on endpoints; capabilities vary and may include antivirus, EDR, and host firewall controls.'],
+        ['What does full-disk encryption protect against?', 'Unauthorized access to data on a powered-off or locked device if its storage is removed or the device is lost, provided keys are protected.'],
+        ['What is the difference between encryption in transit and at rest?', 'In-transit encryption protects data moving across a network. At-rest encryption protects stored data on a device or storage system.'],
+        ['What does Secure Boot do?', 'UEFI verifies trusted boot components before allowing them to run, helping block unauthorized bootloaders.'],
+        ['What is a TPM used for?', 'A Trusted Platform Module securely stores cryptographic material and supports features such as measured boot and device encryption.'],
+        ['What is the purpose of a firewall?', 'It allows or blocks network traffic according to rules, reducing unwanted connections at a host or network boundary.'],
+        ['What is WPA3-Personal?', 'A Wi-Fi security mode using SAE to improve protection of personal wireless networks compared with older shared-password methods.'],
+        ['Why is MFA important even when a password is strong?', 'It adds another factor, so a stolen or reused password alone is less likely to grant access.'],
+        ['How should a lost company phone be handled?', 'Report it promptly, use approved device-management actions such as remote lock or wipe, and follow the organization’s incident process.'],
+        ['How should sensitive data be disposed of?', 'Use an approved method appropriate to the media and data classification, such as secure wiping, cryptographic erase, or certified physical destruction.'],
+        ['What is data minimization?', 'Collect and retain only the information needed for a defined purpose, and dispose of it according to policy when no longer required.'],
+        ['What is shoulder surfing?', 'Observing someone’s screen or keystrokes to obtain sensitive information. Use privacy screens and be aware of surroundings.'],
+        ['Why should default administrator passwords be changed?', 'Published or commonly known defaults are easy targets; replace them with unique credentials and disable unused accounts where possible.'],
+        ['What is a certificate used for in TLS?', 'It binds an identity, such as a hostname, to a public key and helps clients verify the server when issued by a trusted certificate authority.'],
+        ['What is an acceptable use policy?', 'An organizational policy that defines permitted and prohibited uses of company systems, devices, accounts, and networks.']
+      ]),
+      ...makeEntries('software-troubleshooting', [
+        ['A Windows PC repeatedly shows a blue screen after a new driver was installed. What is a good next step?', 'Boot to recovery or Safe Mode, roll back or remove the suspect driver, then install a known-compatible version if needed.'],
+        ['An application crashes for one user but works for others on the same computer. What should you investigate?', 'The user profile, per-user configuration, permissions, and user-specific application data before reinstalling the system.'],
+        ['A Windows computer takes a long time to start. What should you review?', 'Startup apps and services, available storage, malware alerts, recent updates, and system resource usage. Change one cause at a time.'],
+        ['A browser displays unwanted pop-ups and redirects. What should you check?', 'Browser extensions and notification permissions, proxy/DNS settings, and malware indicators. Remove untrusted add-ons and run approved security scans.'],
+        ['A user cannot install an application. What should you verify?', 'They have authorization, the installer is from a trusted source, system requirements are met, and security policy or endpoint controls are not blocking it.'],
+        ['Windows Update repeatedly fails. What should you check?', 'The error code, network access, free disk space, system time, update services, pending restart, and known compatibility issues.'],
+        ['What can cause an application to report that a DLL is missing?', 'A damaged or incomplete application installation, missing supported runtime, or file corruption. Repair or reinstall from a trusted source rather than downloading a random DLL.'],
+        ['A PC is redirected to unfamiliar websites after a browser search. What is a safe response?', 'Disconnect from risky browsing, inspect browser and DNS/proxy settings, run approved malware remediation, and change credentials from a clean device if they may be exposed.'],
+        ['A user cannot access a shared file but can reach the server. What should you verify?', 'The share and NTFS permissions, correct account/group membership, path, and whether the resource is available.'],
+        ['A mobile app will not open after an OS update. What is a sensible sequence?', 'Restart the device, check for app updates and compatibility notes, clear the app cache where supported, and reinstall only after protecting local data.'],
+        ['A mobile device is running slowly and overheating. What should you check?', 'Battery and thermal status, resource-heavy apps, storage capacity, updates, and signs of a failing battery or malicious app.'],
+        ['A user receives a certificate warning on a website. What should they do?', 'Do not bypass it blindly. Check the URL, device time, certificate details, and whether the organization has a known inspection proxy or outage.'],
+        ['What is the difference between a patch and a feature update?', 'A patch typically fixes security or reliability issues. A feature update adds capabilities and may make broader system changes.'],
+        ['When is System Restore appropriate?', 'When a recent driver, application, or configuration change caused system problems and a valid restore point exists; it does not replace a data backup.'],
+        ['What is a common cause of a no-boot operating-system error after adding a drive?', 'The boot order may point to the wrong device, or the bootloader/partition configuration may be missing or inaccessible.'],
+        ['Why should you document software troubleshooting steps?', 'It preserves the timeline, prevents repeated work, supports escalation, and records whether the fix restored the user’s workflow.'],
+        ['What should you do before running malware cleanup on a business device?', 'Follow incident-response policy, isolate the device if needed, preserve relevant evidence, and coordinate with security staff before destructive changes.'],
+        ['What can cause a program to run out of memory?', 'A memory leak, an unusually large workload, too many concurrent applications, or insufficient physical/virtual memory. Identify the process and workload first.'],
+        ['A remote user cannot connect to a company application but can browse the internet. What should you verify?', 'VPN status, multifactor approval, DNS after connection, route or access policy, and the application’s service health.'],
+        ['Why can incorrect system time break secure sign-in or websites?', 'Authentication and TLS certificates rely on valid time ranges; a badly skewed clock can make tokens or certificates appear expired or not yet valid.'],
+        ['What is a clean boot used for?', 'Starting Windows with a minimal set of third-party services and startup apps to isolate software conflicts. Re-enable items systematically after testing.'],
+        ['An application works after reinstalling but loses user settings. Why?', 'The reinstall may remove application data or profile configuration. Back up supported settings and user data before reinstalling.']
+      ]),
+      ...makeEntries('operational-procedures', [
+        ['What does ESD stand for?', 'Electrostatic discharge — a sudden transfer of static electricity that can damage sensitive electronic components.'],
+        ['How should a technician reduce ESD risk?', 'Use an ESD-safe work surface and wrist strap, handle components by their edges, and store them in antistatic packaging.'],
+        ['What should you do before working inside a computer?', 'Shut it down, disconnect AC power and peripherals, follow manufacturer battery guidance, and use appropriate ESD and safety procedures.'],
+        ['What should you do if you find a damaged or frayed power cable?', 'Stop using it and replace it with a correctly rated cable; do not tape over exposed conductors or continue operating the equipment.'],
+        ['Why should toner be handled carefully?', 'Fine toner dust can irritate people and contaminate the work area. Follow the printer manufacturer’s cleanup and disposal instructions.'],
+        ['How should a heavy device be lifted?', 'Assess the load, keep it close to your body, bend at the knees, avoid twisting, and use help or lifting equipment when needed.'],
+        ['What is change management?', 'A controlled process for proposing, assessing, approving, scheduling, implementing, and reviewing system changes.'],
+        ['What is a rollback plan?', 'A documented way to restore the previous working state if a change causes unacceptable problems.'],
+        ['What is the purpose of an incident ticket?', 'To record the reported issue, impact, troubleshooting, communications, resolution, and follow-up in a traceable system.'],
+        ['What information should be included in a useful ticket?', 'A clear symptom, affected user and device, time and impact, exact error text, recent changes, diagnostic steps, and results.'],
+        ['What is an SLA?', 'A service-level agreement defines expected service targets such as response or resolution times and availability.'],
+        ['When should a help-desk issue be escalated?', 'When it exceeds the technician’s permissions or expertise, risks service or data, meets an escalation threshold, or cannot be resolved within the agreed process.'],
+        ['What does the 3-2-1 backup rule recommend?', 'Keep three copies of data, on two types of media, with one copy off-site or otherwise isolated. Verify that backups can be restored.'],
+        ['What is the difference between RTO and RPO?', 'RTO is the target time to restore a service. RPO is the maximum acceptable amount of data loss measured in time.'],
+        ['Why is a restore test important?', 'A completed backup job does not prove that data is usable. Test restoration to verify integrity, permissions, and recovery procedures.'],
+        ['What should you do when handling personally identifiable information?', 'Access only what is needed, protect it from disclosure, use approved storage and transfer methods, and follow retention and disposal policy.'],
+        ['What is chain of custody?', 'A record of who collected, handled, transferred, and stored evidence, with dates and actions, to preserve its integrity.'],
+        ['Why should a technician avoid guessing when communicating an outage?', 'Clear, verified updates set accurate expectations and prevent users from acting on speculation. Share confirmed impact, next steps, and an update time.'],
+        ['What is a knowledge-base article for?', 'To document a repeatable procedure or known issue so support teams can resolve similar incidents consistently.'],
+        ['How should retired storage media containing sensitive data be handled?', 'Use an approved sanitization or destruction method and retain the required disposal record. Deleting files alone may not remove recoverable data.'],
+        ['What is a maintenance window?', 'An approved period reserved for planned work, chosen to reduce user impact and allow time for validation or rollback.'],
+        ['Why should technicians document a configuration change?', 'Documentation helps with future troubleshooting, audits, handoffs, recovery, and understanding the system’s current state.']
+      ])
+    ];
+
+    function buildDistractors(correctCard) {
+      const wrong = masterDataset
+        .filter(c => c.q !== correctCard.q)
+        .map(c => c.a)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+      return [correctCard.a, ...wrong].sort(() => Math.random() - 0.5);
+    }
+
+    function buildExamSuite() {
+      const core1Cards = masterDataset.filter(c => c.exam === 'Core 1');
+      const core2Cards = masterDataset.filter(c => c.exam === 'Core 2');
+
+      const split1 = Math.ceil(core1Cards.length / 2);
+      const split2 = Math.ceil(core2Cards.length / 2);
+
+      const rawExams = [
+        core1Cards.slice(0, split1),
+        core1Cards.slice(split1),
+        core2Cards.slice(0, split2),
+        core2Cards.slice(split2)
+      ];
+
+      return rawExams.map(cardList => {
+        return cardList.map(item => ({
+          q: item.q,
+          a: item.a,
+          cat: item.catName,
+          options: buildDistractors(item),
+          userAns: null,
+          flagged: false
+        }));
+      });
+    }
+
+    let examSuite = buildExamSuite();
     let currentExamIdx = null;
     let currentQIdx = 0;
     let timerInterval = null;
     let secondsElapsed = 0;
+    let instantFeedback = false;
 
     function initScores() {
       const history = JSON.parse(localStorage.getItem('aplus_exam_history')) || {};
@@ -249,11 +532,19 @@
       }, 1000);
     }
 
+    function toggleInstantFeedback() {
+      instantFeedback = document.getElementById('instant-feedback-toggle').checked;
+      document.getElementById('live-score').style.display = instantFeedback ? 'inline' : 'none';
+      renderQ();
+    }
+
     function renderQ() {
       const exam = examSuite[currentExamIdx];
       const q = exam[currentQIdx];
 
+      document.getElementById('track-fill').style.width = Math.round(((currentQIdx + 1) / exam.length) * 100) + "%";
       document.getElementById('q-progress').innerText = `Question ${currentQIdx + 1} / ${exam.length}`;
+      document.getElementById('q-cat').innerText = q.cat;
       document.getElementById('q-text').innerText = q.q;
 
       const flagBtn = document.getElementById('btn-flag');
@@ -263,14 +554,39 @@
       const container = document.getElementById('options-container');
       container.innerHTML = '';
 
+      const expBox = document.getElementById('explanation-box');
+      expBox.classList.add('hide');
+
       q.options.forEach((opt, i) => {
         const letter = String.fromCharCode(65 + i);
         const btn = document.createElement('button');
-        btn.className = `option-btn ${q.userAns === opt ? 'selected' : ''}`;
+        let extraClass = '';
+
+        if (q.userAns === opt) extraClass += ' selected';
+
+        if (instantFeedback && q.userAns !== null) {
+          if (opt === q.a) extraClass += ' correct-ans';
+          else if (q.userAns === opt) extraClass += ' wrong-ans';
+        }
+
+        btn.className = `option-btn${extraClass}`;
         btn.innerHTML = `<span class="opt-letter">${letter}.</span> <span>${opt}</span>`;
         btn.onclick = () => selectOption(opt);
         container.appendChild(btn);
       });
+
+      if (instantFeedback && q.userAns !== null) {
+        expBox.classList.remove('hide');
+        const isRight = q.userAns === q.a;
+        expBox.innerHTML = `<strong>${isRight ? '✓ Correct!' : '✗ Incorrect'}</strong><br>${q.a}`;
+        expBox.style.borderColor = isRight ? 'var(--correct)' : 'var(--wrong)';
+      }
+
+      if (instantFeedback) {
+        const answered = exam.filter(item => item.userAns !== null);
+        const right = answered.filter(item => item.userAns === item.a).length;
+        document.getElementById('live-score').innerText = `Score: ${right}/${answered.length}`;
+      }
 
       document.getElementById('btn-next').innerText = (currentQIdx === exam.length - 1) ? "Submit Exam" : "Next →";
     }
@@ -315,14 +631,12 @@
       const scorePct = Math.round((correctCount / exam.length) * 100);
       const passed = scorePct >= 85;
 
-      // Save to local storage
       const history = JSON.parse(localStorage.getItem('aplus_exam_history')) || {};
       if (!history[currentExamIdx] || scorePct > history[currentExamIdx].score) {
         history[currentExamIdx] = { score: scorePct, status: passed ? 'PASSED' : 'FAILED', date: new Date().toLocaleDateString() };
         localStorage.setItem('aplus_exam_history', JSON.stringify(history));
       }
 
-      // Display Results
       document.getElementById('screen-exam').classList.add('hide');
       document.getElementById('screen-results').classList.remove('hide');
 
@@ -334,7 +648,6 @@
       document.getElementById('result-status').style.color = passed ? "var(--correct)" : "var(--wrong)";
       document.getElementById('result-stats').innerText = `You correctly answered ${correctCount} out of ${exam.length} questions.`;
 
-      // Build Review Breakdown
       const revContainer = document.getElementById('review-container');
       revContainer.innerHTML = '';
 
@@ -343,10 +656,10 @@
         const item = document.createElement('div');
         item.className = `review-item ${isRight ? 'correct' : 'incorrect'}`;
         item.innerHTML = `
-          <span class="concept-tag">${q.cat}</span>
+          <span style="font-size:0.7rem; font-weight:bold; color:var(--accent); text-transform:uppercase;">${q.cat}</span>
           <div class="rev-q">${i + 1}. ${q.q}</div>
-          <div class="rev-ans">Your Answer: <span class="${isRight ? 'correct-val' : 'user-val'}">${q.userAns || 'Not Answered'}</span></div>
-          ${!isRight ? `<div class="rev-ans">Correct Answer: <span class="correct-val">${q.a}</span></div>` : ''}
+          <div class="rev-ans">Your Choice: <span class="${isRight ? 'correct-val' : 'user-val'}">${q.userAns || 'Not Answered'}</span></div>
+          ${!isRight ? `<div class="rev-ans">Correct Key: <span class="correct-val">${q.a}</span></div>` : ''}
         `;
         revContainer.appendChild(item);
       });
